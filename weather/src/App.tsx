@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography'
 import { SearchBar } from './components/SearchBar'
 import { LocationResults } from './components/LocationResults'
 import { MapView } from './components/MapView'
-import { ApiError, searchLocations } from './api'
+import { ApiError, searchLocations, fetchWeather } from './api'
 import type { Location, RequestStatus } from './types'
 import './App.css'
 
@@ -45,8 +45,14 @@ function App() {
     }
   }
 
-  const handleSelect = (loc: Location) => {
+  const handleSelect = async (loc: Location) => {
     setSelected(loc)
+    try {
+      const weather = await fetchWeather(loc.latitude, loc.longitude)
+      console.log('Weather data:', weather)
+    } catch (err) {
+      console.error('Failed to fetch weather:', err)
+    }
   }
 
   return (

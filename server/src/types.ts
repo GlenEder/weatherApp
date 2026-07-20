@@ -40,4 +40,14 @@ export interface CurrentWeather {
   units: Units
 }
 
-export type RequestStatus = 'idle' | 'loading' | 'success' | 'empty' | 'error'
+export type UnitsMode = 'imperial' | 'metric'
+
+export interface LocationsQuery {
+  q: string
+}
+
+export interface WeatherQuery {
+  lat: number
+  lon: number
+  units?: UnitsMode
+}

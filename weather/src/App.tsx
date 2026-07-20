@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography'
 import { SearchBar } from './components/SearchBar'
 import { LocationResults } from './components/LocationResults'
 import { MapView } from './components/MapView'
-import { GeocodingError, searchLocations } from './api'
+import { ApiError, searchLocations } from './api'
 import type { Location, RequestStatus } from './types'
 import './App.css'
 
@@ -38,7 +38,7 @@ function App() {
       setMatches([])
       setStatus('error')
       setError(
-        err instanceof GeocodingError
+          err instanceof ApiError
           ? err.message
           : 'Something went wrong. Please try again.',
       )

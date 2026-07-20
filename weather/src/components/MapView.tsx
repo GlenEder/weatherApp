@@ -33,7 +33,7 @@ export function MapView({ location }: MapViewProps) {
     if (!map || !location) return
 
     const latlng: L.LatLngTuple = [location.latitude, location.longitude]
-    map.setView(latlng, SELECTED_ZOOM)
+    map.flyTo(latlng, SELECTED_ZOOM, { duration: 1.2 })
 
     if (markerRef.current) {
       markerRef.current.setLatLng(latlng)

@@ -1,124 +1,89 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
-import Box from '@mui/material/Box'
-import CircularProgress from '@mui/material/CircularProgress'
-import Container from '@mui/material/Container'
-import Paper from '@mui/material/Paper'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import { SearchBar } from './components/SearchBar'
-import { LocationResults } from './components/LocationResults'
 import { MapView } from './components/MapView'
-import { ApiError, searchLocations, fetchWeather } from './api'
-import type { Location, RequestStatus } from './types'
+import { OverlaySearchBar } from './components/OverlaySearchBar'
+import { WeatherCard } from './components/WeatherCard'
+import { fetchWeather } from './api'
+import type { Location, CurrentWeather } from './types'
 import './App.css'
 
 function App() {
-  const [term, setTerm] = useState('')
-  const [matches, setMatches] = useState<Location[]>([])
+  const [overlayOpen, setOverlayOpen] = useState(false)
   const [selected, setSelected] = useState<Location | null>(null)
-  const [status, setStatus] = useState<RequestStatus>('idle')
-  const [error, setError] = useState<string | null>(null)
+  const [weather, setWeather] = useState<CurrentWeather | null>(null)
+  const [weatherError, setWeatherError] = useState<string | null>(null)
 
-  const handleSearch = async (value: string) => {
-    setSelected(null)
-    setError(null)
-    const trimmed = value.trim()
-    if (!trimmed) {
-      setMatches([])
-      setStatus('idle')
-      return
-    }
-    setStatus('loading')
-    try {
-      const results = await searchLocations(trimmed)
-      setMatches(results)
-      setStatus(results.length > 0 ? 'success' : 'empty')
-    } catch (err) {
-      setMatches([])
-      setStatus('error')
-      setError(
-          err instanceof ApiError
-          ? err.message
-          : 'Something went wrong. Please try again.',
-      )
-    }
-  }
+  // Global key listener for / and Cmd+K to open search overlay
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is already typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return
+      }
 
-  const handleSelect = async (loc: Location) => {
+      if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault()
+        setOverlayOpen(true)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleSelect = useCallback(async (loc: Location) => {
     setSelected(loc)
+    setWeather(null)
+    setWeatherError(null)
     try {
-      const weather = await fetchWeather(loc.latitude, loc.longitude)
-      console.log('Weather data:', weather)
+      const data = await fetchWeather(loc.latitude, loc.longitude)
+      setWeather(data)
     } catch (err) {
-      console.error('Failed to fetch weather:', err)
+      setWeatherError('Failed to load weather data.')
     }
-  }
+  }, [])
+
+  const handleCloseWeather = useCallback(() => {
+    setWeather(null)
+    setWeatherError(null)
+  }, [])
+
+  const handleCloseOverlay = useCallback(() => {
+    setOverlayOpen(false)
+  }, [])
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Stack spacing={2}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Weather Map
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Search for a city to see it on the map.
-          </Typography>
-        </Box>
+    <div className="app-root">
+      <MapView location={selected} />
 
-        <SearchBar value={term} onChange={setTerm} onSearch={handleSearch} loading={status === 'loading'} />
+      {weather && selected && (
+        <WeatherCard
+          location={selected}
+          weather={weather}
+          onClose={handleCloseWeather}
+        />
+      )}
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { md: 'minmax(280px, 360px) 1fr' },
-            gap: 2,
-            alignItems: 'stretch',
-          }}
-        >
-          <Paper variant="outlined" sx={{ height: '70vh', overflow: 'auto' }}>
-            {status === 'loading' && (
-              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <CircularProgress />
-              </Stack>
-            )}
-            {status === 'idle' && (
-              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
-                <Typography color="text.secondary" align="center">
-                  Search for a city to see matching locations.
-                </Typography>
-              </Stack>
-            )}
-            {status === 'empty' && (
-              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
-                <Alert severity="info" variant="outlined">
-                  {`No matches found for "${term}".`}
-                </Alert>
-              </Stack>
-            )}
-            {status === 'error' && (
-              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
-                <Alert severity="error" variant="outlined">
-                  {error ?? 'Something went wrong.'}
-                </Alert>
-              </Stack>
-            )}
-            {status === 'success' && (
-              <LocationResults
-                locations={matches}
-                selectedId={selected?.id ?? null}
-                onSelect={handleSelect}
-              />
-            )}
-          </Paper>
+      <Snackbar
+        open={!!weatherError}
+        autoHideDuration={6000}
+        onClose={() => setWeatherError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert severity="error" variant="filled" onClose={() => setWeatherError(null)}>
+          {weatherError}
+        </Alert>
+      </Snackbar>
 
-          <Paper variant="outlined" sx={{ height: '70vh', overflow: 'hidden' }}>
-            <MapView location={selected} />
-          </Paper>
-        </Box>
-      </Stack>
-    </Container>
+      <OverlaySearchBar
+        open={overlayOpen}
+        onClose={handleCloseOverlay}
+        onSelect={handleSelect}
+      />
+    </div>
   )
 }
 

@@ -1,2 +1,6 @@
-/* App-specific styles. Layout is handled by MUI components; this file
-   holds any small overrides that don't belong in the global index.css. */
+/* Full-screen map container. */
+.app-root {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}

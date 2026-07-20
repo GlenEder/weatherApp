@@ -1,75 +1,53 @@
-# React + TypeScript + Vite
+# Weather Map
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A clean, minimal map viewer for the weather app. Search for a city, pick the
+right match from a disambiguated list, and see it on an interactive Leaflet map.
 
-Currently, two official plugins are available:
+This is the first slice of the app described in [`docs/user_story.md`](../docs/user_story.md):
+search → disambiguate → select → view on map. The Express server, weather
+details, mobile responsiveness, and tests are deferred to later rounds.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- Vite + React 19 + TypeScript
+- Material UI 6+ for components and states
+- Leaflet 1.9 (vanilla, via a `useMap` hook) with CartoDB light tiles
+- Open-Meteo Geocoding API (no API key required) called directly from the client
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd weather
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open the URL Vite prints (default http://localhost:5173).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Script            | Description                                  |
+| ----------------- | -------------------------------------------- |
+| `npm run dev`     | Start the Vite dev server with HMR           |
+| `npm run build`   | Type-check (`tsc -b`) and build for production |
+| `npm run preview` | Preview the production build locally         |
+| `npm run lint`    | Run ESLint                                    |
 
-```
+## How it works
+
+1. Type a city name in the search bar and submit.
+2. The client calls the Open-Meteo Geocoding API and lists up to 10 matches,
+   each showing the country flag, admin region, population, and coordinates so
+   same-name cities can be told apart.
+3. Selecting a match drops a marker on the map, pans/zooms to it, and opens a
+   popup with the city name and coordinates.
+4. Loading, empty, and error states are shown with MUI components — never a
+   blank screen.
+
+## Notes
+
+- The map uses CartoDB `light_all` tiles for a calm, low-contrast basemap.
+- Leaflet's default marker icon paths are fixed in `src/main.tsx` to work under
+  Vite's bundler.
+- All geocoding calls are centralized in `src/api.ts`, so swapping the direct
+  API call for a local server proxy later is a one-file change.

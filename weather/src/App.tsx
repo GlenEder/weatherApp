@@ -1,121 +1,118 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+import Container from '@mui/material/Container'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import { SearchBar } from './components/SearchBar'
+import { LocationResults } from './components/LocationResults'
+import { MapView } from './components/MapView'
+import { GeocodingError, searchLocations } from './api'
+import type { Location, RequestStatus } from './types'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [term, setTerm] = useState('')
+  const [matches, setMatches] = useState<Location[]>([])
+  const [selected, setSelected] = useState<Location | null>(null)
+  const [status, setStatus] = useState<RequestStatus>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSearch = async (value: string) => {
+    setSelected(null)
+    setError(null)
+    const trimmed = value.trim()
+    if (!trimmed) {
+      setMatches([])
+      setStatus('idle')
+      return
+    }
+    setStatus('loading')
+    try {
+      const results = await searchLocations(trimmed)
+      setMatches(results)
+      setStatus(results.length > 0 ? 'success' : 'empty')
+    } catch (err) {
+      setMatches([])
+      setStatus('error')
+      setError(
+        err instanceof GeocodingError
+          ? err.message
+          : 'Something went wrong. Please try again.',
+      )
+    }
+  }
+
+  const handleSelect = (loc: Location) => {
+    setSelected(loc)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Weather Map
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Search for a city to see it on the map.
+          </Typography>
+        </Box>
+
+        <SearchBar value={term} onChange={setTerm} onSearch={handleSearch} loading={status === 'loading'} />
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { md: 'minmax(280px, 360px) 1fr' },
+            gap: 2,
+            alignItems: 'stretch',
+          }}
         >
-          Count is {count}
-        </button>
-      </section>
+          <Paper variant="outlined" sx={{ height: '70vh', overflow: 'auto' }}>
+            {status === 'loading' && (
+              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <CircularProgress />
+              </Stack>
+            )}
+            {status === 'idle' && (
+              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
+                <Typography color="text.secondary" align="center">
+                  Search for a city to see matching locations.
+                </Typography>
+              </Stack>
+            )}
+            {status === 'empty' && (
+              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
+                <Alert severity="info" variant="outlined">
+                  {`No matches found for "${term}".`}
+                </Alert>
+              </Stack>
+            )}
+            {status === 'error' && (
+              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', p: 3 }}>
+                <Alert severity="error" variant="outlined">
+                  {error ?? 'Something went wrong.'}
+                </Alert>
+              </Stack>
+            )}
+            {status === 'success' && (
+              <LocationResults
+                locations={matches}
+                selectedId={selected?.id ?? null}
+                onSelect={handleSelect}
+              />
+            )}
+          </Paper>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          <Paper variant="outlined" sx={{ height: '70vh', overflow: 'hidden' }}>
+            <MapView location={selected} />
+          </Paper>
+        </Box>
+      </Stack>
+    </Container>
   )
 }
 

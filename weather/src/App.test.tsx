@@ -8,7 +8,7 @@ vi.mock('./components/MapView', () => ({
 }))
 
 vi.mock('./components/OverlaySearchBar', () => ({
-  OverlaySearchBar: vi.fn(({ open, onClose, onSelect }) =>
+  OverlaySearchBar: vi.fn(({ open, onClose }) =>
     open ? <div data-testid="search-overlay" onClick={onClose}>Search Overlay</div> : null,
   ),
 }))

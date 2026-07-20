@@ -13,6 +13,12 @@ function App() {
   const [selected, setSelected] = useState<Location | null>(null)
   const [weather, setWeather] = useState<CurrentWeather | null>(null)
   const [weatherError, setWeatherError] = useState<string | null>(null)
+  const [hintDismissed, setHintDismissed] = useState(false)
+
+  // Dismiss the hint once search has been used
+  const dismissHint = useCallback(() => {
+    setHintDismissed(true)
+  }, [])
 
   // Global key listener for / and Cmd+K to open search overlay
   useEffect(() => {
@@ -28,28 +34,35 @@ function App() {
       if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
         e.preventDefault()
         setOverlayOpen(true)
+        dismissHint()
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [dismissHint])
 
   const handleSelect = useCallback(async (loc: Location) => {
     setSelected(loc)
     setWeather(null)
     setWeatherError(null)
+    dismissHint()
     try {
       const data = await fetchWeather(loc.latitude, loc.longitude)
       setWeather(data)
     } catch (err) {
       setWeatherError('Failed to load weather data.')
     }
-  }, [])
+  }, [dismissHint])
 
   const handleCloseWeather = useCallback(() => {
     setWeather(null)
     setWeatherError(null)
   }, [])
+
+  const handleOpenOverlay = useCallback(() => {
+    setOverlayOpen(true)
+    dismissHint()
+  }, [dismissHint])
 
   const handleCloseOverlay = useCallback(() => {
     setOverlayOpen(false)
@@ -66,6 +79,13 @@ function App() {
           onClose={handleCloseWeather}
         />
       )}
+
+      <div
+        className={`search-hint${hintDismissed ? ' hidden' : ''}`}
+        onClick={handleOpenOverlay}
+      >
+        Press <kbd>/</kbd> to search
+      </div>
 
       <Snackbar
         open={!!weatherError}

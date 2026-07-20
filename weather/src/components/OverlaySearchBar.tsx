@@ -15,6 +15,7 @@ import type { Location, RequestStatus } from '../types'
 
 interface OverlaySearchBarProps {
   open: boolean
+  initialQuery?: string
   onClose: () => void
   onSelect: (location: Location) => void
 }
@@ -34,7 +35,7 @@ function buildSecondary(loc: Location): string {
   return region
 }
 
-export function OverlaySearchBar({ open, onClose, onSelect }: OverlaySearchBarProps) {
+export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }: OverlaySearchBarProps) {
   const [term, setTerm] = useState('')
   const [matches, setMatches] = useState<Location[]>([])
   const [status, setStatus] = useState<RequestStatus>('idle')
@@ -95,20 +96,24 @@ export function OverlaySearchBar({ open, onClose, onSelect }: OverlaySearchBarPr
     }
   }, [term, handleSearch])
 
-  // Focus input when overlay opens
+  // Focus input when overlay opens, and seed with initialQuery
   useEffect(() => {
-    if (open && inputRef.current) {
-      // Small delay to ensure the DOM is rendered
+    if (!open) return
+
+    if (inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 50)
     }
-    // Reset state when opening
-    if (open) {
+
+    if (initialQuery) {
+      setTerm(initialQuery)
+      handleSearch(initialQuery)
+    } else {
       setTerm('')
       setMatches([])
       setStatus('idle')
       setError(null)
     }
-  }, [open])
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle keyboard: Escape to close
   useEffect(() => {

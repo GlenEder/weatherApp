@@ -14,13 +14,14 @@ function App() {
   const [weather, setWeather] = useState<CurrentWeather | null>(null)
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const [hintDismissed, setHintDismissed] = useState(false)
+  const [initialQuery, setInitialQuery] = useState('')
 
   // Dismiss the hint once search has been used
   const dismissHint = useCallback(() => {
     setHintDismissed(true)
   }, [])
 
-  // Global key listener for / and Cmd+K to open search overlay
+  // Global key listener — any printable character opens search overlay
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is already typing in an input
@@ -31,8 +32,19 @@ function App() {
         return
       }
 
-      if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+      // Cmd+K / Ctrl+K opens empty search
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
+        setInitialQuery('')
+        setOverlayOpen(true)
+        dismissHint()
+        return
+      }
+
+      // Any single printable character opens search seeded with that character
+      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        setInitialQuery(e.key)
         setOverlayOpen(true)
         dismissHint()
       }
@@ -84,7 +96,7 @@ function App() {
         className={`search-hint${hintDismissed ? ' hidden' : ''}`}
         onClick={handleOpenOverlay}
       >
-        Press <kbd>/</kbd> to search
+        Type to search
       </div>
 
       <Snackbar
@@ -100,6 +112,7 @@ function App() {
 
       <OverlaySearchBar
         open={overlayOpen}
+        initialQuery={initialQuery}
         onClose={handleCloseOverlay}
         onSelect={handleSelect}
       />

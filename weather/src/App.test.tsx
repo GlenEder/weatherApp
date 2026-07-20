@@ -31,7 +31,14 @@ describe('App', () => {
     expect(screen.getByTestId('map-view')).toBeInTheDocument()
   })
 
-  it('opens search overlay when / key is pressed', () => {
+  it('opens search overlay when a printable character is pressed', () => {
+    render(<App />)
+    expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'L' })
+    expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
+  })
+
+  it('opens search overlay when / is pressed', () => {
     render(<App />)
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
     fireEvent.keyDown(document, { key: '/' })
@@ -52,18 +59,28 @@ describe('App', () => {
     expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
   })
 
-  it('does not open overlay when typing / in an input', () => {
+  it('does not open overlay when typing in an input', () => {
     render(<App />)
     const input = document.createElement('input')
-    fireEvent.keyDown(input, { key: '/' })
+    fireEvent.keyDown(input, { key: 'L' })
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
   })
 
-  it('closes overlay when Escape is pressed', () => {
+  it('does not open overlay for modifier-only keys', () => {
     render(<App />)
-    fireEvent.keyDown(document, { key: '/' })
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.keyDown(document, { key: 'Shift' })
+    fireEvent.keyDown(document, { key: 'Control' })
+    fireEvent.keyDown(document, { key: 'Meta' })
+    fireEvent.keyDown(document, { key: 'Alt' })
+    fireEvent.keyDown(document, { key: 'F5' })
+    expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
+  })
+
+  it('closes overlay when backdrop is clicked', () => {
+    render(<App />)
+    fireEvent.keyDown(document, { key: 'L' })
     expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
-    // Clicking the overlay mock triggers onClose
     fireEvent.click(screen.getByTestId('search-overlay'))
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
   })

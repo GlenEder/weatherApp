@@ -73,14 +73,6 @@ function App() {
         return
       }
 
-      // Cmd+K / Ctrl+K opens empty search
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setInitialQuery('')
-        setOverlayOpen(true)
-        return
-      }
-
       // Any single printable character opens search seeded with that character
       if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault()
@@ -185,7 +177,7 @@ function App() {
 
       {/* Inline search bar — click to open the overlay search panel */}
       <SearchInput
-        placeholder="Search cities…  ⌘K"
+        placeholder="Begin typing to search…"
         showLabel={false}
         readOnly
         onFocus={() => setOverlayOpen(true)}

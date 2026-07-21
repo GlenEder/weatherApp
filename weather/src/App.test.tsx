@@ -70,18 +70,13 @@ describe('App', () => {
     expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
   })
 
-  it('opens search overlay when Cmd+K is pressed', () => {
+  it('does not open search overlay when Cmd+K or Ctrl+K is pressed', () => {
     renderWithProviders(<App />)
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'k', metaKey: true })
-    expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
-  })
-
-  it('opens search overlay when Ctrl+K is pressed', () => {
-    renderWithProviders(<App />)
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
-    expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
+    expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
   })
 
   it('does not open overlay when typing in an input', () => {
@@ -102,9 +97,9 @@ describe('App', () => {
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
   })
 
-  it('renders the inline search bar with keyboard shortcut hint', () => {
+  it('renders the inline search bar with placeholder text', () => {
     renderWithProviders(<App />)
-    const searchInput = screen.getByPlaceholderText(/Search cities/)
+    const searchInput = screen.getByPlaceholderText(/Begin typing to search/)
     expect(searchInput).toBeInTheDocument()
     expect(searchInput).toHaveAttribute('readOnly')
   })
@@ -112,7 +107,7 @@ describe('App', () => {
   it('opens search overlay when the search bar is focused', () => {
     renderWithProviders(<App />)
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
-    const searchInput = screen.getByPlaceholderText(/Search cities/)
+    const searchInput = screen.getByPlaceholderText(/Begin typing to search/)
     fireEvent.focus(searchInput)
     expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
   })

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ColorModeProvider } from './ColorModeContext'
 import App from './App'
+import { fetchWeather } from './api'
+
+const mockFetchWeather = vi.mocked(fetchWeather)
 
 // Mock child components to avoid map/API dependencies
 vi.mock('./components/MapView', () => ({
@@ -9,8 +12,18 @@ vi.mock('./components/MapView', () => ({
 }))
 
 vi.mock('./components/OverlaySearchBar', () => ({
-  OverlaySearchBar: vi.fn(({ open, onClose }) =>
-    open ? <div data-testid="search-overlay" onClick={onClose}>Search Overlay</div> : null,
+  OverlaySearchBar: vi.fn(({ open, onClose, onSelect }) =>
+    open ? (
+      <div
+        data-testid="search-overlay"
+        onClick={() => {
+          onSelect({ id: 1, name: 'London', latitude: 51.5, longitude: -0.13, country: 'United Kingdom' })
+          onClose()
+        }}
+      >
+        Search Overlay
+      </div>
+    ) : null,
   ),
 }))
 
@@ -82,11 +95,80 @@ describe('App', () => {
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
   })
 
-  it('closes overlay when backdrop is clicked', () => {
+  it('closes overlay when backdrop is clicked', async () => {
     renderWithProviders(<App />)
     fireEvent.keyDown(document, { key: 'L' })
     expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('search-overlay'))
-    expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows loading skeleton while weather is being fetched', async () => {
+    mockFetchWeather.mockImplementationOnce(
+      () => new Promise(() => {}), // never resolves — keep loading
+    )
+
+    renderWithProviders(<App />)
+    fireEvent.keyDown(document, { key: 'L' })
+    fireEvent.click(screen.getByTestId('search-overlay'))
+
+    await waitFor(() => {
+      // The skeleton card uses MUI Skeleton — we check for the card wrapper
+      const skeletons = document.querySelectorAll('.MuiSkeleton-root')
+      expect(skeletons.length).toBeGreaterThanOrEqual(4)
+    })
+  })
+
+  it('replaces loading skeleton with weather card on success', async () => {
+    const mockWeatherData = {
+      latitude: 51.5,
+      longitude: -0.13,
+      timezone: 'Europe/London',
+      elevation: 25,
+      observedAt: '2026-07-20T12:00:00Z',
+      temperature: 18.5,
+      apparentTemperature: 16.2,
+      humidity: 65,
+      precipitation: 0,
+      weatherCode: 2,
+      cloudCover: 40,
+      surfacePressure: 1015,
+      windSpeed: 12.3,
+      windDirection: 220,
+      windGusts: 18.5,
+      units: { temperature: '°C', windSpeed: 'km/h', precipitation: 'mm', humidity: '%', pressure: 'hPa' },
+    }
+    mockFetchWeather.mockResolvedValueOnce(mockWeatherData)
+
+    renderWithProviders(<App />)
+    fireEvent.keyDown(document, { key: 'L' })
+    fireEvent.click(screen.getByTestId('search-overlay'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('weather-card')).toBeInTheDocument()
+    })
+
+    // Loading skeletons should be gone
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root')
+    expect(skeletons.length).toBe(0)
+  })
+
+  it('hides loading skeleton on weather fetch error', async () => {
+    mockFetchWeather.mockRejectedValueOnce(new Error('Network error'))
+
+    renderWithProviders(<App />)
+    fireEvent.keyDown(document, { key: 'L' })
+    fireEvent.click(screen.getByTestId('search-overlay'))
+
+    await waitFor(() => {
+      // Error Snackbar should appear
+      expect(screen.getByText('Failed to load weather data.')).toBeInTheDocument()
+    })
+
+    // Loading skeletons should be gone
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root')
+    expect(skeletons.length).toBe(0)
   })
 })

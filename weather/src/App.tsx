@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
+import Skeleton from '@mui/material/Skeleton'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Box from '@mui/material/Box'
 import { MapView } from './components/MapView'
 import { OverlaySearchBar } from './components/OverlaySearchBar'
 import { WeatherCard } from './components/WeatherCard'
@@ -10,9 +14,12 @@ import type { Location, CurrentWeather } from './types'
 import './App.css'
 
 function App() {
+  type WeatherStatus = 'idle' | 'loading' | 'success' | 'error'
+
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [selected, setSelected] = useState<Location | null>(null)
   const [weather, setWeather] = useState<CurrentWeather | null>(null)
+  const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle')
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const [hintDismissed, setHintDismissed] = useState(false)
   const [initialQuery, setInitialQuery] = useState('')
@@ -56,20 +63,24 @@ function App() {
 
   const handleSelect = useCallback(async (loc: Location) => {
     setSelected(loc)
+    setWeatherStatus('loading')
     setWeather(null)
     setWeatherError(null)
     dismissHint()
     try {
       const data = await fetchWeather(loc.latitude, loc.longitude)
       setWeather(data)
+      setWeatherStatus('success')
     } catch (err) {
       setWeatherError('Failed to load weather data.')
+      setWeatherStatus('error')
     }
   }, [dismissHint])
 
   const handleCloseWeather = useCallback(() => {
     setWeather(null)
     setWeatherError(null)
+    setWeatherStatus('idle')
   }, [])
 
   const handleOpenOverlay = useCallback(() => {
@@ -84,6 +95,33 @@ function App() {
   return (
     <div className="app-root">
       <MapView location={selected} />
+
+      {weatherStatus === 'loading' && selected && (
+        <Card
+          elevation={4}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            left: 24,
+            zIndex: 1100,
+            minWidth: 220,
+            maxWidth: 300,
+            borderRadius: 2,
+          }}
+        >
+          <CardContent sx={{ pb: '16px !important' }}>
+            <Skeleton variant="text" width={120} />
+            <Skeleton variant="text" width={100} height={48} sx={{ mt: 0.5 }} />
+            <Skeleton variant="text" width={80} />
+            <Skeleton variant="text" width={140} sx={{ mt: 1 }} />
+            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+              <Skeleton variant="text" width={50} />
+              <Skeleton variant="text" width={60} />
+              <Skeleton variant="text" width={55} />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       {weather && selected && (
         <WeatherCard

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import { useMap } from '../hooks/useMap'
+import { useColorMode } from '../ColorModeContext'
 import type { Location } from '../types'
 
 interface MapViewProps {
@@ -25,8 +26,14 @@ function escapeHtml(s: string): string {
 
 export function MapView({ location }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useMap(containerRef, { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM })
+  const { mapRef, setDarkMode } = useMap(containerRef, { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM })
   const markerRef = useRef<L.Marker | null>(null)
+  const { mode } = useColorMode()
+
+  // Swap tile layer when mode changes
+  useEffect(() => {
+    setDarkMode(mode === 'dark')
+  }, [mode, setDarkMode])
 
   useEffect(() => {
     const map = mapRef.current

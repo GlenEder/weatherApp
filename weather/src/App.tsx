@@ -4,6 +4,7 @@ import Alert from '@mui/material/Alert'
 import { MapView } from './components/MapView'
 import { OverlaySearchBar } from './components/OverlaySearchBar'
 import { WeatherCard } from './components/WeatherCard'
+import { ThemeToggle } from './components/ThemeToggle'
 import { fetchWeather } from './api'
 import type { Location, CurrentWeather } from './types'
 import './App.css'
@@ -116,6 +117,8 @@ function App() {
         onClose={handleCloseOverlay}
         onSelect={handleSelect}
       />
+
+      <ThemeToggle />
     </div>
   )
 }

@@ -10,10 +10,27 @@ body {
     Cantarell, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* Light mode (default) custom properties */
+:root {
+  --search-hint-bg: rgba(0, 0, 0, 0.04);
+  --search-hint-color: rgba(0, 0, 0, 0.35);
+  --search-hint-hover-bg: rgba(0, 0, 0, 0.07);
+  --search-hint-hover-color: rgba(0, 0, 0, 0.55);
+}
+
+/* Dark mode custom properties */
+body.dark {
+  --search-hint-bg: rgba(255, 255, 255, 0.08);
+  --search-hint-color: rgba(255, 255, 255, 0.45);
+  --search-hint-hover-bg: rgba(255, 255, 255, 0.12);
+  --search-hint-hover-color: rgba(255, 255, 255, 0.65);
 }

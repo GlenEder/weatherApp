@@ -2,7 +2,6 @@ import { useRef, type FormEvent } from 'react'
 import SearchIcon from '@mui/icons-material/Search'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
 import InputBase from '@mui/material/InputBase'
 import Typography from '@mui/material/Typography'
 import { styled } from '@mui/material/styles'
@@ -29,7 +28,7 @@ const PillInput = styled(InputBase)(({ theme }) => ({
   fontSize: '1rem',
   fontFamily: 'inherit',
   '& .MuiInputBase-input': {
-    padding: '0 0.25rem 0 1.5rem',
+    padding: '0 3.5rem 0 1.5rem',
     height: '2.8rem',
     boxSizing: 'border-box',
     '&::placeholder': {
@@ -80,7 +79,11 @@ export function SearchInput({
   return (
     <Box style={style}>
       {showLabel && <StyledLabel variant="caption">Submit your search</StyledLabel>}
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+      >
         <PillInput
           id="searchQueryInput"
           name="searchQueryInput"
@@ -89,21 +92,22 @@ export function SearchInput({
           {...inputProps}
           readOnly={isReadOnly}
           onFocus={onFocus}
-          endAdornment={
-            <InputAdornment position="end">
-              <IconButton
-                id="searchQuerySubmit"
-                type="submit"
-                name="searchQuerySubmit"
-                aria-label="Search"
-                edge="end"
-                sx={{ color: 'text.secondary' }}
-              >
-                <SearchIcon fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          }
         />
+        <IconButton
+          id="searchQuerySubmit"
+          type="submit"
+          name="searchQuerySubmit"
+          aria-label="Search"
+          sx={{
+            position: 'absolute',
+            right: 0,
+            width: '3.5rem',
+            height: '2.8rem',
+            color: 'text.secondary',
+          }}
+        >
+          <SearchIcon fontSize="small" />
+        </IconButton>
       </Box>
     </Box>
   )

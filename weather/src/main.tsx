@@ -22,6 +22,9 @@ function ThemedApp() {
 
 const rootEl = document.getElementById('root')
 if (!rootEl) throw new Error('Root element #root not found')
+
+// Fade out the static loading screen after React renders
+const loadingScreen = document.getElementById('loading-screen')
 createRoot(rootEl).render(
   <StrictMode>
     <ColorModeProvider>
@@ -29,3 +32,16 @@ createRoot(rootEl).render(
     </ColorModeProvider>
   </StrictMode>,
 )
+if (loadingScreen) {
+  requestAnimationFrame(() => {
+    loadingScreen.classList.add('hidden')
+    let removed = false
+    const cleanup = () => {
+      if (removed) return
+      removed = true
+      loadingScreen.remove()
+    }
+    loadingScreen.addEventListener('transitionend', cleanup)
+    setTimeout(cleanup, 1000)
+  })
+}

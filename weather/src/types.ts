@@ -41,3 +41,8 @@ export interface CurrentWeather {
 }
 
 export type RequestStatus = 'idle' | 'loading' | 'success' | 'empty' | 'error'
+
+export interface LocationWithWeather {
+  location: Location
+  weather: CurrentWeather
+}

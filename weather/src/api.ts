@@ -1,4 +1,4 @@
-import type { CurrentWeather, Location } from './types'
+import type { CurrentWeather, Location, LocationWithWeather } from './types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
@@ -41,6 +41,32 @@ export async function searchLocations(term: string): Promise<Location[]> {
   }
 
   return data.locations
+}
+
+export async function fetchSameNameLocations(
+  name: string,
+  excludeId: number,
+): Promise<Location[]> {
+  const results = await searchLocations(name)
+  return results.filter((loc) => loc.id !== excludeId)
+}
+
+export async function fetchBatchWeather(
+  locations: Location[],
+): Promise<LocationWithWeather[]> {
+  const maxResults = 6
+  const settled = await Promise.allSettled(
+    locations.slice(0, maxResults).map(async (loc) => {
+      const weather = await fetchWeather(loc.latitude, loc.longitude)
+      return { location: loc, weather }
+    }),
+  )
+  return settled
+    .filter(
+      (r): r is PromiseFulfilledResult<LocationWithWeather> =>
+        r.status === 'fulfilled',
+    )
+    .map((r) => r.value)
 }
 
 export async function fetchWeather(

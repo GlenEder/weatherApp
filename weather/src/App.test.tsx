@@ -2,9 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ColorModeProvider } from './ColorModeContext'
 import App from './App'
-import { fetchWeather } from './api'
-
-const mockFetchWeather = vi.mocked(fetchWeather)
+import { fetchWeather, fetchSameNameLocations, fetchBatchWeather } from './api'
 
 // Mock child components to avoid map/API dependencies
 vi.mock('./components/MapView', () => ({
@@ -31,9 +29,19 @@ vi.mock('./components/WeatherCard', () => ({
   WeatherCard: () => <div data-testid="weather-card" />,
 }))
 
+vi.mock('./components/SameNameCityCards', () => ({
+  SameNameCityCards: vi.fn(() => <div data-testid="same-name-cards" />),
+}))
+
 vi.mock('./api', () => ({
   fetchWeather: vi.fn(),
+  fetchSameNameLocations: vi.fn(),
+  fetchBatchWeather: vi.fn(),
 }))
+
+const mockFetchWeather = vi.mocked(fetchWeather)
+const mockFetchSameNameLocations = vi.mocked(fetchSameNameLocations)
+const mockFetchBatchWeather = vi.mocked(fetchBatchWeather)
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<ColorModeProvider>{ui}</ColorModeProvider>)
@@ -141,6 +149,7 @@ describe('App', () => {
       units: { temperature: '°C', windSpeed: 'km/h', precipitation: 'mm', humidity: '%', pressure: 'hPa' },
     }
     mockFetchWeather.mockResolvedValueOnce(mockWeatherData)
+    mockFetchSameNameLocations.mockResolvedValueOnce([])
 
     renderWithProviders(<App />)
     fireEvent.keyDown(document, { key: 'L' })
@@ -170,5 +179,36 @@ describe('App', () => {
     // Loading skeletons should be gone
     const skeletons = document.querySelectorAll('.MuiSkeleton-root')
     expect(skeletons.length).toBe(0)
+  })
+
+  it('triggers same-name lookup after weather loads successfully', async () => {
+    const mockWeatherData = {
+      latitude: 51.5,
+      longitude: -0.13,
+      timezone: 'Europe/London',
+      elevation: 25,
+      observedAt: '2026-07-20T12:00:00Z',
+      temperature: 18.5,
+      apparentTemperature: 16.2,
+      humidity: 65,
+      precipitation: 0,
+      weatherCode: 2,
+      cloudCover: 40,
+      surfacePressure: 1015,
+      windSpeed: 12.3,
+      windDirection: 220,
+      windGusts: 18.5,
+      units: { temperature: '°C', windSpeed: 'km/h', precipitation: 'mm', humidity: '%', pressure: 'hPa' },
+    }
+    mockFetchWeather.mockResolvedValueOnce(mockWeatherData)
+    mockFetchSameNameLocations.mockResolvedValueOnce([])
+
+    renderWithProviders(<App />)
+    fireEvent.keyDown(document, { key: 'L' })
+    fireEvent.click(screen.getByTestId('search-overlay'))
+
+    await waitFor(() => {
+      expect(mockFetchSameNameLocations).toHaveBeenCalledWith('London', 1)
+    })
   })
 })

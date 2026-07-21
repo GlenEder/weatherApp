@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import Skeleton from '@mui/material/Skeleton'
@@ -8,9 +8,10 @@ import Box from '@mui/material/Box'
 import { MapView } from './components/MapView'
 import { OverlaySearchBar } from './components/OverlaySearchBar'
 import { WeatherCard } from './components/WeatherCard'
+import { SameNameCityCards } from './components/SameNameCityCards'
 import { ThemeToggle } from './components/ThemeToggle'
-import { fetchWeather } from './api'
-import type { Location, CurrentWeather } from './types'
+import { fetchWeather, fetchSameNameLocations, fetchBatchWeather } from './api'
+import type { Location, CurrentWeather, LocationWithWeather } from './types'
 import './App.css'
 
 function App() {
@@ -23,6 +24,9 @@ function App() {
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const [hintDismissed, setHintDismissed] = useState(false)
   const [initialQuery, setInitialQuery] = useState('')
+  const [sameNameCities, setSameNameCities] = useState<LocationWithWeather[]>([])
+  const [sameNameLoading, setSameNameLoading] = useState(false)
+  const sameNameRef = useRef<AbortController | null>(null)
 
   // Dismiss the hint once search has been used
   const dismissHint = useCallback(() => {
@@ -66,6 +70,8 @@ function App() {
     setWeatherStatus('loading')
     setWeather(null)
     setWeatherError(null)
+    setSameNameCities([])
+    setSameNameLoading(false)
     dismissHint()
     try {
       const data = await fetchWeather(loc.latitude, loc.longitude)
@@ -81,6 +87,8 @@ function App() {
     setWeather(null)
     setWeatherError(null)
     setWeatherStatus('idle')
+    setSameNameCities([])
+    setSameNameLoading(false)
   }, [])
 
   const handleOpenOverlay = useCallback(() => {
@@ -91,6 +99,49 @@ function App() {
   const handleCloseOverlay = useCallback(() => {
     setOverlayOpen(false)
   }, [])
+
+  // Same-name lookup: when weather loads, find other cities with the same name
+  useEffect(() => {
+    if (!weather || !selected) return
+
+    // Cancel any in-flight same-name request
+    if (sameNameRef.current) {
+      sameNameRef.current.abort()
+    }
+    const controller = new AbortController()
+    sameNameRef.current = controller
+
+    setSameNameLoading(true)
+    setSameNameCities([])
+
+    ;(async () => {
+      try {
+        const locations = await fetchSameNameLocations(selected.name, selected.id)
+        if (controller.signal.aborted) return
+
+        if (locations.length === 0) {
+          setSameNameCities([])
+          setSameNameLoading(false)
+          return
+        }
+
+        const batch = await fetchBatchWeather(locations)
+        if (controller.signal.aborted) return
+
+        setSameNameCities(batch)
+        setSameNameLoading(false)
+      } catch {
+        if (!controller.signal.aborted) {
+          setSameNameCities([])
+          setSameNameLoading(false)
+        }
+      }
+    })()
+
+    return () => {
+      controller.abort()
+    }
+  }, [weather, selected])
 
   return (
     <div className="app-root">
@@ -130,6 +181,12 @@ function App() {
           onClose={handleCloseWeather}
         />
       )}
+
+      <SameNameCityCards
+        cities={sameNameCities}
+        loading={sameNameLoading}
+        onSelect={handleSelect}
+      />
 
       <div
         className={`search-hint${hintDismissed ? ' hidden' : ''}`}

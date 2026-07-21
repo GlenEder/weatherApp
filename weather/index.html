@@ -5,29 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>weather</title>
-    <style>
-      html, body, #root { height: 100%; margin: 0; }
-      #loading-screen {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: system-ui, sans-serif;
-        font-size: 1.125rem;
-        color: #6b7280;
-        background: #f3f4f6;
-        transition: opacity 0.3s;
-        z-index: 9999;
-      }
-      @media (prefers-color-scheme: dark) {
-        #loading-screen { color: #9ca3af; background: #111827; }
-      }
-      #loading-screen.hidden { opacity: 0; pointer-events: none; }
-    </style>
   </head>
   <body>
-    <div id="loading-screen">Loading&hellip;</div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -7,6 +7,7 @@ import type { Location, LocationWithWeather } from '../types'
 import { weatherDescription, formatTemp } from '../utils/weather'
 
 interface SameNameCityCardsProps {
+  cityName: string
   cities: LocationWithWeather[]
   loading: boolean
   onSelect: (location: Location) => void
@@ -17,6 +18,7 @@ function buildLocationLabel(loc: Location): string {
 }
 
 export function SameNameCityCards({
+  cityName,
   cities,
   loading,
   onSelect,
@@ -31,17 +33,32 @@ export function SameNameCityCards({
         left: 420,
         right: 24,
         zIndex: 1100,
-        display: 'flex',
-        gap: 1.5,
-        overflowX: 'auto',
-        pb: 0.5,
-        '&::-webkit-scrollbar': { height: 4 },
-        '&::-webkit-scrollbar-thumb': {
-          bgcolor: 'divider',
-          borderRadius: 2,
-        },
       }}
     >
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{
+          mb: 1,
+          fontStyle: 'italic',
+        }}
+      >
+        Other {cityName}s from around the world…
+      </Typography>
+
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1.5,
+          overflowX: 'auto',
+          pb: 0.5,
+          '&::-webkit-scrollbar': { height: 4 },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'divider',
+            borderRadius: 2,
+          },
+        }}
+      >
       {loading
         ? Array.from({ length: 3 }, (_, i) => `skel-${i}`).map((key) => (
             <Card
@@ -106,6 +123,7 @@ export function SameNameCityCards({
               </CardContent>
             </Card>
           ))}
+      </Box>
     </Box>
   )
 }

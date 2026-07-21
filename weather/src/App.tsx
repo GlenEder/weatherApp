@@ -174,6 +174,7 @@ function App() {
         )}
 
         <SameNameCityCards
+          cityName={selected?.name ?? ''}
           cities={sameNameCities}
           loading={sameNameLoading}
           onSelect={handleSameNameSelect}

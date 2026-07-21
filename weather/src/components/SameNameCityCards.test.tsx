@@ -92,4 +92,18 @@ describe('SameNameCityCards', () => {
     fireEvent.click(screen.getByRole('button'))
     expect(onSelect).toHaveBeenCalledWith(parisTexas)
   })
+
+  it('renders banner with city name', () => {
+    render(
+      <SameNameCityCards
+        cityName="Springfield"
+        cities={[{ location: parisTexas, weather: mockWeather }]}
+        loading={false}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(
+      screen.getByText('Other Springfields from around the world…'),
+    ).toBeInTheDocument()
+  })
 })

@@ -7,6 +7,7 @@ import CardContent from '@mui/material/CardContent'
 import Box from '@mui/material/Box'
 import { MapView } from './components/MapView'
 import { OverlaySearchBar } from './components/OverlaySearchBar'
+import { SearchInput } from './components/SearchInput'
 import { WeatherCard } from './components/WeatherCard'
 import { SameNameCityCards } from './components/SameNameCityCards'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -22,7 +23,6 @@ function App() {
   const [weather, setWeather] = useState<CurrentWeather | null>(null)
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle')
   const [weatherError, setWeatherError] = useState<string | null>(null)
-  const [hintDismissed, setHintDismissed] = useState(false)
   const [initialQuery, setInitialQuery] = useState('')
   const [sameNameCities, setSameNameCities] = useState<LocationWithWeather[]>([])
   const [sameNameLoading, setSameNameLoading] = useState(false)
@@ -62,11 +62,6 @@ function App() {
     }
   }, [])
 
-  // Dismiss the hint once search has been used
-  const dismissHint = useCallback(() => {
-    setHintDismissed(true)
-  }, [])
-
   // Global key listener — any printable character opens search overlay
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,7 +78,6 @@ function App() {
         e.preventDefault()
         setInitialQuery('')
         setOverlayOpen(true)
-        dismissHint()
         return
       }
 
@@ -92,12 +86,11 @@ function App() {
         e.preventDefault()
         setInitialQuery(e.key)
         setOverlayOpen(true)
-        dismissHint()
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [dismissHint])
+  }, [])
 
   const handleSelect = useCallback(async (loc: Location) => {
     setSelected(loc)
@@ -106,7 +99,6 @@ function App() {
     setWeatherError(null)
     setSameNameCities([])
     setSameNameLoading(false)
-    dismissHint()
     try {
       const data = await fetchWeather(loc.latitude, loc.longitude)
       setWeather(data)
@@ -116,7 +108,7 @@ function App() {
       setWeatherError('Failed to load weather data.')
       setWeatherStatus('error')
     }
-  }, [dismissHint, loadSameNameCities])
+  }, [loadSameNameCities])
 
 
   // Rotate same-name cards in-memory — no API calls
@@ -141,11 +133,6 @@ function App() {
     setSameNameCities([])
     setSameNameLoading(false)
   }, [])
-
-  const handleOpenOverlay = useCallback(() => {
-    setOverlayOpen(true)
-    dismissHint()
-  }, [dismissHint])
 
   const handleCloseOverlay = useCallback(() => {
     setOverlayOpen(false)
@@ -196,12 +183,26 @@ function App() {
         onSelect={handleSameNameSelect}
       />
 
-      <div
-        className={`search-hint${hintDismissed ? ' hidden' : ''}`}
-        onClick={handleOpenOverlay}
-      >
-        Type to search
-      </div>
+      {/* Inline search bar — click to open the overlay search panel */}
+      <SearchInput
+        placeholder="Search cities…  ⌘K"
+        showLabel={false}
+        readOnly
+        onFocus={() => setOverlayOpen(true)}
+        onSearch={(query) => {
+          setInitialQuery(query)
+          setOverlayOpen(true)
+        }}
+        style={{
+          position: 'fixed',
+          top: 32,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          margin: 0,
+          maxWidth: 360,
+        }}
+      />
 
       <Snackbar
         open={!!weatherError}

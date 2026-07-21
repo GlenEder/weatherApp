@@ -10,6 +10,8 @@ interface SearchInputProps {
   inputRef?: React.RefObject<HTMLInputElement | null>
   showLabel?: boolean
   style?: React.CSSProperties
+  onFocus?: () => void
+  readOnly?: boolean
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -79,6 +81,8 @@ export function SearchInput({
   inputRef: externalRef,
   showLabel = true,
   style,
+  onFocus,
+  readOnly: isReadOnly,
 }: SearchInputProps) {
   const { mode } = useColorMode()
   const isDark = mode === 'dark'
@@ -111,6 +115,8 @@ export function SearchInput({
           placeholder={placeholder}
           ref={inputElRef}
           {...inputProps}
+          readOnly={isReadOnly}
+          onFocus={onFocus}
           style={{ ...styles.input, ...(isDark && darkOverrides.input) }}
         />
         <button

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ColorModeProvider } from './ColorModeContext'
 import App from './App'
-import { fetchWeather, fetchSameNameLocations, fetchBatchWeather } from './api'
+import { fetchWeather, fetchSameNameLocations } from './api'
 
 // Mock child components to avoid map/API dependencies
 vi.mock('./components/MapView', () => ({
@@ -41,7 +41,6 @@ vi.mock('./api', () => ({
 
 const mockFetchWeather = vi.mocked(fetchWeather)
 const mockFetchSameNameLocations = vi.mocked(fetchSameNameLocations)
-const mockFetchBatchWeather = vi.mocked(fetchBatchWeather)
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<ColorModeProvider>{ui}</ColorModeProvider>)
@@ -101,6 +100,21 @@ describe('App', () => {
     fireEvent.keyDown(document, { key: 'Alt' })
     fireEvent.keyDown(document, { key: 'F5' })
     expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
+  })
+
+  it('renders the inline search bar with keyboard shortcut hint', () => {
+    renderWithProviders(<App />)
+    const searchInput = screen.getByPlaceholderText(/Search cities/)
+    expect(searchInput).toBeInTheDocument()
+    expect(searchInput).toHaveAttribute('readOnly')
+  })
+
+  it('opens search overlay when the search bar is focused', () => {
+    renderWithProviders(<App />)
+    expect(screen.queryByTestId('search-overlay')).not.toBeInTheDocument()
+    const searchInput = screen.getByPlaceholderText(/Search cities/)
+    fireEvent.focus(searchInput)
+    expect(screen.getByTestId('search-overlay')).toBeInTheDocument()
   })
 
   it('closes overlay when backdrop is clicked', async () => {

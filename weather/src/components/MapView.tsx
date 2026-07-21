@@ -53,5 +53,12 @@ export function MapView({ location }: MapViewProps) {
     markerRef.current.bindPopup(popup).openPopup()
   }, [location, mapRef])
 
-  return <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+  const bg = mode === 'dark' ? '#0a0a10' : '#f2efe9'
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ height: '100%', width: '100%', background: bg }}
+    />
+  )
 }

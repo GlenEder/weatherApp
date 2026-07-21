@@ -9,6 +9,16 @@ const app = express()
 
 app.disable('x-powered-by')
 
+// Request logger — visible confirmation every time the backend is hit
+app.use((req, _res, next) => {
+  const ts = new Date().toLocaleTimeString()
+  const qs = Object.keys(req.query).length
+    ? `?${new URLSearchParams(req.query as Record<string, string>).toString()}`
+    : ''
+  console.log(`  ⇨ ${ts} ${req.method} ${req.path}${qs}`)
+  next()
+})
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
 })

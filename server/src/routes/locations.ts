@@ -14,12 +14,15 @@ router.get('/', async (req, res, next) => {
     const parsed = querySchema.safeParse(req.query)
     if (!parsed.success) {
       const first = parsed.error.errors[0]
+      console.log(`  ⇨ GET /locations — 400: ${first.message}`)
       res.status(400).json({ error: first.message })
       return
     }
 
     const query: LocationsQuery = { q: parsed.data.q }
+    console.log(`  ⇨ Searching locations for "${parsed.data.q}"`)
     const result = await searchLocations(query)
+    console.log(`  ⇨ Found ${result.locations.length} location(s) for "${parsed.data.q}"`)
     res.json(result)
   } catch (err) {
     next(err)

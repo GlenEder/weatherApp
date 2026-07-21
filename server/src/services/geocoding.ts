@@ -54,6 +54,7 @@ export async function searchLocations(query: LocationsQuery): Promise<{ location
   const term = validateQuery(query)
 
   const url = `${config.geocodingBaseUrl}/search?name=${encodeURIComponent(term)}&count=10&language=en&format=json`
+  console.log(`  ⇨ [upstream] GET ${url}`)
 
   let response: Response
   try {
@@ -80,5 +81,6 @@ export async function searchLocations(query: LocationsQuery): Promise<{ location
   }
 
   const locations = (data.results ?? []).map(projectLocation)
+  console.log(`  ⇨ [upstream]   ${locations.length} result(s), first: ${locations[0]?.name ?? 'n/a'}`)
   return { locations }
 }

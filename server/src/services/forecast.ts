@@ -113,6 +113,7 @@ export async function getCurrentWeather(query: WeatherQuery): Promise<CurrentWea
 
   const unitCfg = UNITS_MAP[units]
   const url = `${config.forecastBaseUrl}/forecast?latitude=${lat}&longitude=${lon}&current=${CURRENT_PARAMS}&temperature_unit=${unitCfg.temperature}&wind_speed_unit=${unitCfg.wind}&precipitation_unit=${unitCfg.precipitation}&timezone=auto`
+  console.log(`  ⇨ [upstream] GET ${url}`)
 
   let response: Response
   try {
@@ -138,5 +139,7 @@ export async function getCurrentWeather(query: WeatherQuery): Promise<CurrentWea
     throw new ApiError(502, 'Invalid JSON from forecast service')
   }
 
-  return projectWeather(data)
+  const weather = projectWeather(data)
+  console.log(`  ⇨ [upstream]   ${weather.temperature}${weather.units.temperature}, code ${weather.weatherCode}, humidity ${weather.humidity}${weather.units.humidity}`)
+  return weather
 }

@@ -22,7 +22,6 @@ router.get('/', async (req, res, next) => {
     const parsed = querySchema.safeParse(req.query)
     if (!parsed.success) {
       const first = parsed.error.errors[0]
-      console.log(`  ⇨ GET /weather — 400: ${first.message}`)
       res.status(400).json({ error: first.message })
       return
     }
@@ -32,9 +31,7 @@ router.get('/', async (req, res, next) => {
       lon: parsed.data.lon,
       units: parsed.data.units as UnitsMode,
     }
-    console.log(`  ⇨ Fetching weather for lat=${parsed.data.lat} lon=${parsed.data.lon} (${parsed.data.units})`)
     const result = await getCurrentWeather(query)
-    console.log(`  ⇨ Weather received: ${result.temperature}${result.units.temperature}, ${result.weatherCode} (${result.timezone})`)
     res.json(result)
   } catch (err) {
     next(err)

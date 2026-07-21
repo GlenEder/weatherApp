@@ -1,7 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import TextField from '@mui/material/TextField'
-import InputAdornment from '@mui/material/InputAdornment'
-import SearchIcon from '@mui/icons-material/Search'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
@@ -12,6 +9,7 @@ import Alert from '@mui/material/Alert'
 import Paper from '@mui/material/Paper'
 import { searchLocations, ApiError } from '../api'
 import type { Location, RequestStatus } from '../types'
+import { SearchInput } from './SearchInput'
 
 interface OverlaySearchBarProps {
   open: boolean
@@ -162,26 +160,16 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
         {/* Search input */}
         <Paper
           elevation={8}
-          sx={{ borderRadius: '12px 12px 0 0', overflow: 'hidden' }}
+          sx={{ borderRadius: '12px 12px 0 0', overflow: 'hidden', p: 1.5 }}
         >
-          <TextField
-            fullWidth
-            inputRef={inputRef}
+          <SearchInput
             value={term}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={handleInputChange}
+            onSearch={handleSearch}
             placeholder="Search for a city..."
-            variant="outlined"
-            autoComplete="off"
-            slotProps={{
-              input: {
-                sx: { fontSize: '1.1rem', py: 0.5 },
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              },
-            }}
+            inputRef={inputRef}
+            showLabel={false}
+            style={{ margin: 0, maxWidth: 'none' }}
           />
         </Paper>
 

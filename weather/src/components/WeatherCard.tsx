@@ -60,8 +60,8 @@ export function WeatherCard({ location, weather, onClose }: WeatherCardProps) {
         bottom: 24,
         left: 24,
         zIndex: 1100,
-        minWidth: 220,
-        maxWidth: 300,
+        minWidth: 260,
+        maxWidth: 380,
         borderRadius: 2,
       }}
     >
@@ -74,12 +74,12 @@ export function WeatherCard({ location, weather, onClose }: WeatherCardProps) {
           <CloseIcon fontSize="small" />
         </IconButton>
 
-        <Typography variant="subtitle2" color="text.secondary" sx={{ pr: 3 }}>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ pr: 3, fontWeight: 500 }}>
           {location.name}
           {location.admin1 ? `, ${location.admin1}` : ''}
         </Typography>
 
-        <Typography variant="h3" component="div" sx={{ fontWeight: 300, lineHeight: 1.2, mt: 0.5 }}>
+        <Typography variant="h2" component="div" sx={{ fontWeight: 300, lineHeight: 1.1, mt: 0.5 }}>
           {formatTemp(weather.temperature, weather.units.temperature)}
         </Typography>
 

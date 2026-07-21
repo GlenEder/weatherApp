@@ -66,7 +66,7 @@ export function SameNameCityCards({
       sx={{
         position: 'fixed',
         bottom: 24,
-        left: 340,
+        left: 420,
         right: 24,
         zIndex: 1100,
         display: 'flex',

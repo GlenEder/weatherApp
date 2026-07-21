@@ -73,11 +73,11 @@ describe('SameNameCityCards', () => {
         onSelect={vi.fn()}
       />,
     )
-    expect(screen.getByText(/Paris/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Paris/)).toHaveLength(2)
     expect(screen.getByText(/Île-de-France/)).toBeInTheDocument()
     expect(screen.getByText(/Texas/)).toBeInTheDocument()
-    expect(screen.getByText(/22°C/)).toBeInTheDocument()
-    expect(screen.getByText(/Clear sky/)).toBeInTheDocument()
+    expect(screen.getAllByText(/22°C/)).toHaveLength(2)
+    expect(screen.getAllByText(/Clear sky/)).toHaveLength(2)
   })
 
   it('calls onSelect when a card is clicked', () => {

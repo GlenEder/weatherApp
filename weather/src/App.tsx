@@ -28,6 +28,40 @@ function App() {
   const [sameNameLoading, setSameNameLoading] = useState(false)
   const sameNameRef = useRef<AbortController | null>(null)
 
+  // Kick off a same-name lookup for the given location (called after fresh weather fetch)
+  const loadSameNameCities = useCallback(async (loc: Location) => {
+    if (sameNameRef.current) {
+      sameNameRef.current.abort()
+    }
+    const controller = new AbortController()
+    sameNameRef.current = controller
+
+    setSameNameLoading(true)
+    setSameNameCities([])
+
+    try {
+      const locations = await fetchSameNameLocations(loc.name, loc.id)
+      if (controller.signal.aborted) return
+
+      if (locations.length === 0) {
+        setSameNameCities([])
+        setSameNameLoading(false)
+        return
+      }
+
+      const batch = await fetchBatchWeather(locations)
+      if (controller.signal.aborted) return
+
+      setSameNameCities(batch)
+      setSameNameLoading(false)
+    } catch {
+      if (!controller.signal.aborted) {
+        setSameNameCities([])
+        setSameNameLoading(false)
+      }
+    }
+  }, [])
+
   // Dismiss the hint once search has been used
   const dismissHint = useCallback(() => {
     setHintDismissed(true)
@@ -77,11 +111,28 @@ function App() {
       const data = await fetchWeather(loc.latitude, loc.longitude)
       setWeather(data)
       setWeatherStatus('success')
+      loadSameNameCities(loc)
     } catch (err) {
       setWeatherError('Failed to load weather data.')
       setWeatherStatus('error')
     }
-  }, [dismissHint])
+  }, [dismissHint, loadSameNameCities])
+
+
+  // Rotate same-name cards in-memory — no API calls
+  const handleSameNameSelect = (loc: Location) => {
+    const entry = sameNameCities.find(c => c.location.id === loc.id)
+    if (!entry || !selected || !weather) return
+
+    const updated = sameNameCities
+      .filter(c => c.location.id !== loc.id)
+      .concat([{ location: selected, weather }])
+
+    setSelected(loc)
+    setWeather(entry.weather)
+    setSameNameCities(updated)
+    setWeatherStatus('success')
+  }
 
   const handleCloseWeather = useCallback(() => {
     setWeather(null)
@@ -99,49 +150,6 @@ function App() {
   const handleCloseOverlay = useCallback(() => {
     setOverlayOpen(false)
   }, [])
-
-  // Same-name lookup: when weather loads, find other cities with the same name
-  useEffect(() => {
-    if (!weather || !selected) return
-
-    // Cancel any in-flight same-name request
-    if (sameNameRef.current) {
-      sameNameRef.current.abort()
-    }
-    const controller = new AbortController()
-    sameNameRef.current = controller
-
-    setSameNameLoading(true)
-    setSameNameCities([])
-
-    ;(async () => {
-      try {
-        const locations = await fetchSameNameLocations(selected.name, selected.id)
-        if (controller.signal.aborted) return
-
-        if (locations.length === 0) {
-          setSameNameCities([])
-          setSameNameLoading(false)
-          return
-        }
-
-        const batch = await fetchBatchWeather(locations)
-        if (controller.signal.aborted) return
-
-        setSameNameCities(batch)
-        setSameNameLoading(false)
-      } catch {
-        if (!controller.signal.aborted) {
-          setSameNameCities([])
-          setSameNameLoading(false)
-        }
-      }
-    })()
-
-    return () => {
-      controller.abort()
-    }
-  }, [weather, selected])
 
   return (
     <div className="app-root">
@@ -185,7 +193,7 @@ function App() {
       <SameNameCityCards
         cities={sameNameCities}
         loading={sameNameLoading}
-        onSelect={handleSelect}
+        onSelect={handleSameNameSelect}
       />
 
       <div

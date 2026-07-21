@@ -20,16 +20,6 @@ interface OverlaySearchBarProps {
   onSelect: (location: Location) => void
 }
 
-function flagEmoji(countryCode?: string): string {
-  if (!countryCode || countryCode.length !== 2) return ''
-  const cc = countryCode.toUpperCase()
-  const A = 0x1f1e6
-  return (
-    String.fromCodePoint(A + cc.charCodeAt(0) - 65) +
-    String.fromCodePoint(A + cc.charCodeAt(1) - 65)
-  )
-}
-
 function buildSecondary(loc: Location): string {
   const region = [loc.admin1, loc.country].filter(Boolean).join(', ')
   return region
@@ -169,12 +159,10 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
           flexDirection: 'column',
         }}
       >
+        {/* Search input */}
         <Paper
           elevation={8}
-          sx={{
-            borderRadius: showDropdown && status === 'success' ? '12px 12px 0 0' : 2,
-            overflow: 'hidden',
-          }}
+          sx={{ borderRadius: '12px 12px 0 0', overflow: 'hidden' }}
         >
           <TextField
             fullWidth
@@ -202,64 +190,60 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
           <Paper
             elevation={8}
             sx={{
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              borderTopLeftRadius: 0,
-              borderTopRightRadius: 0,
               borderRadius: '0 0 12px 12px',
-              maxHeight: 360,
-              overflow: 'auto',
+              overflow: 'hidden',
+              mt: '1px',
             }}
           >
-            {status === 'loading' && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                <CircularProgress size={28} />
-              </Box>
-            )}
+            <Box sx={{ height: '1px', bgcolor: 'divider' }} />
+            <Box sx={{ maxHeight: 360, overflow: 'auto' }}>
+                {status === 'loading' && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                    <CircularProgress size={28} />
+                  </Box>
+                )}
 
-            {status === 'empty' && (
-              <Box sx={{ p: 2 }}>
-                <Alert severity="info" variant="outlined" sx={{ m: 0 }}>
-                  No matches found for "{term}".
-                </Alert>
-              </Box>
-            )}
+                {status === 'empty' && (
+                  <Box sx={{ p: 2 }}>
+                    <Alert severity="info" variant="outlined" sx={{ m: 0 }}>
+                      No matches found for "{term}".
+                    </Alert>
+                  </Box>
+                )}
 
-            {status === 'error' && (
-              <Box sx={{ p: 2 }}>
-                <Alert severity="error" variant="outlined" sx={{ m: 0 }}>
-                  {error ?? 'Something went wrong.'}
-                </Alert>
-              </Box>
-            )}
+                {status === 'error' && (
+                  <Box sx={{ p: 2 }}>
+                    <Alert severity="error" variant="outlined" sx={{ m: 0 }}>
+                      {error ?? 'Something went wrong.'}
+                    </Alert>
+                  </Box>
+                )}
 
-            {status === 'success' && (
-              <List disablePadding>
-                {matches.map((loc) => (
-                  <ListItemButton
-                    key={loc.id}
-                    onClick={() => handleSelect(loc)}
-                    sx={{ px: 2, py: 1.5 }}
-                  >
-                    <ListItemText
-                      primary={
-                        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography component="span" aria-hidden sx={{ fontSize: '1.1rem' }}>
-                            {flagEmoji(loc.country_code)}
-                          </Typography>
-                          <Typography component="span" sx={{ fontWeight: 600 }}>
-                            {loc.name}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={buildSecondary(loc)}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            )}
-          </Paper>
-        )}
+                {status === 'success' && (
+                  <List disablePadding>
+                    {matches.map((loc) => (
+                      <ListItemButton
+                        key={loc.id}
+                        onClick={() => handleSelect(loc)}
+                        sx={{ px: 2, py: 1.5 }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Typography component="span" sx={{ fontWeight: 600 }}>
+                                {loc.name}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={buildSecondary(loc)}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                )}
+              </Box>
+            </Paper>
+          )}
       </Box>
     </>
   )

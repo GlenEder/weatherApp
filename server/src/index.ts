@@ -1,3 +1,4 @@
+import path from 'node:path'
 import express from 'express'
 import { config } from './config'
 import { errorHandler, notFound } from './errors'
@@ -14,6 +15,16 @@ app.get('/health', (_req, res) => {
 
 app.use('/locations', locationsRouter)
 app.use('/weather', weatherRouter)
+
+// Serve built frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendDist = path.resolve(process.cwd(), '..', 'weather', 'dist')
+  app.use(express.static(frontendDist))
+  // SPA fallback — any non-API GET returns index.html
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'))
+  })
+}
 
 app.use(notFound)
 app.use(errorHandler)

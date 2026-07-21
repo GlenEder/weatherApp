@@ -1,5 +1,11 @@
 {
-  "dependencies": {
-    "leaflet": "^1.9.4"
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"cd server && npm run dev\" \"cd weather && npm run dev\"",
+    "build": "cd server && npm run build && cd ../weather && npm run build",
+    "test": "cd server && npm test && cd ../weather && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.4"
   }
 }

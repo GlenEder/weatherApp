@@ -64,7 +64,8 @@ Open the URL in your browser. The Vite dev server proxies `/locations` and
    disambiguate.
 4. Results are shown in a scrollable list. Pick the correct city.
 5. A marker drops on the Leaflet map at that city's coordinates.
-6. *(Weather details panel coming in a follow-up round.)*
+6. A weather card appears in the bottom-left corner showing temperature, feels-like,
+   condition, humidity, wind, and precipitation for the selected city.
 
 ## Server endpoints
 

@@ -1,7 +1,9 @@
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { OverlaySearchBar } from '../components/OverlaySearchBar'
+import { ColorModeProvider } from '../ColorModeContext'
 import type { Location } from '../types'
 
 const mockLocations: Location[] = [
@@ -41,26 +43,30 @@ vi.mock('../api', () => ({
 const { searchLocations } = await import('../api')
 const mockSearchLocations = vi.mocked(searchLocations)
 
+function renderWithProvider(ui: React.ReactElement) {
+  return render(<ColorModeProvider>{ui}</ColorModeProvider>)
+}
+
 describe('OverlaySearchBar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('does not render when open is false', () => {
-    const { container } = render(
+    const { container } = renderWithProvider(
       <OverlaySearchBar open={false} onClose={vi.fn()} onSelect={vi.fn()} />,
     )
     expect(container.firstChild).toBeNull()
   })
 
   it('renders backdrop and search input when open is true', () => {
-    render(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     expect(screen.getByPlaceholderText('Search for a city...')).toBeInTheDocument()
   })
 
   it('calls onClose when backdrop is clicked', () => {
     const onClose = vi.fn()
-    render(<OverlaySearchBar open={true} onClose={onClose} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={onClose} onSelect={vi.fn()} />)
     // The backdrop is the outermost Box with inset: 0
     const backdrop = screen.getByTestId('search-backdrop')
     fireEvent.click(backdrop)
@@ -69,7 +75,7 @@ describe('OverlaySearchBar', () => {
 
   it('calls onClose when Escape is pressed', () => {
     const onClose = vi.fn()
-    render(<OverlaySearchBar open={true} onClose={onClose} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={onClose} onSelect={vi.fn()} />)
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledOnce()
   })
@@ -77,7 +83,7 @@ describe('OverlaySearchBar', () => {
   it('shows loading indicator while searching', async () => {
     // Return a promise that never resolves during the test
     mockSearchLocations.mockImplementationOnce(() => new Promise(() => {}))
-    render(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     const input = screen.getByPlaceholderText('Search for a city...')
     await userEvent.type(input, 'Lon')
     await waitFor(() => {
@@ -87,7 +93,7 @@ describe('OverlaySearchBar', () => {
 
   it('shows results dropdown after successful search', async () => {
     mockSearchLocations.mockResolvedValueOnce(mockLocations)
-    render(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     const input = screen.getByPlaceholderText('Search for a city...')
     await userEvent.type(input, 'Lon')
     await waitFor(() => {
@@ -98,7 +104,7 @@ describe('OverlaySearchBar', () => {
 
   it('shows empty state when no results', async () => {
     mockSearchLocations.mockResolvedValueOnce([])
-    render(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     const input = screen.getByPlaceholderText('Search for a city...')
     await userEvent.type(input, 'Xyzabc')
     await waitFor(() => {
@@ -108,7 +114,7 @@ describe('OverlaySearchBar', () => {
 
   it('shows error state on API failure', async () => {
     mockSearchLocations.mockRejectedValueOnce(new Error('Network error'))
-    render(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     const input = screen.getByPlaceholderText('Search for a city...')
     await userEvent.type(input, 'Lon')
     await waitFor(() => {
@@ -120,7 +126,7 @@ describe('OverlaySearchBar', () => {
     mockSearchLocations.mockResolvedValueOnce(mockLocations)
     const onSelect = vi.fn()
     const onClose = vi.fn()
-    render(<OverlaySearchBar open={true} onClose={onClose} onSelect={onSelect} />)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={onClose} onSelect={onSelect} />)
     const input = screen.getByPlaceholderText('Search for a city...')
     await userEvent.type(input, 'Lon')
     await waitFor(() => {

@@ -27,7 +27,9 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
   const [matches, setMatches] = useState<Location[]>([])
   const [status, setStatus] = useState<RequestStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -105,6 +107,20 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
     return () => clearTimeout(timer)
   }, [open, initialQuery, handleSearch])
 
+  // Reset highlight when results change
+  useEffect(() => {
+    setHighlightedIndex(-1)
+  }, [matches])
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex < 0 || !listRef.current) return
+    const item = listRef.current.children[highlightedIndex] as HTMLElement | undefined
+    if (item && typeof item.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest' })
+    }
+  }, [highlightedIndex])
+
   // Handle keyboard: Escape to close
   useEffect(() => {
     if (!open) return
@@ -136,6 +152,22 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
     onClose()
   }
 
+  const handlePanelKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (status !== 'success' || matches.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlightedIndex(prev => (prev < matches.length - 1 ? prev + 1 : 0))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlightedIndex(prev => (prev > 0 ? prev - 1 : matches.length - 1))
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault()
+      e.stopPropagation()
+      handleSelect(matches[highlightedIndex])
+    }
+  }, [status, matches, highlightedIndex])
+
   if (!open) return null
 
   const showDropdown = status === 'loading' || status === 'success' || status === 'empty' || status === 'error'
@@ -157,6 +189,7 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
 
       {/* Search panel */}
       <Box
+        onKeyDown={handlePanelKeyDown}
         sx={{
           position: 'fixed',
           top: '18%',
@@ -220,11 +253,12 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
                 )}
 
                 {status === 'success' && (
-                  <List disablePadding>
-                    {matches.map((loc) => (
+                  <List disablePadding ref={listRef}>
+                    {matches.map((loc, index) => (
                       <ListItemButton
                         key={loc.id}
                         onClick={() => handleSelect(loc)}
+                        selected={index === highlightedIndex}
                         sx={{ px: 2, py: 1.5 }}
                       >
                         <ListItemText

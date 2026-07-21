@@ -11,17 +11,16 @@ import { SearchInput } from './components/SearchInput'
 import { WeatherCard } from './components/WeatherCard'
 import { SameNameCityCards } from './components/SameNameCityCards'
 import { ThemeToggle } from './components/ThemeToggle'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { fetchWeather, fetchSameNameLocations, fetchBatchWeather } from './api'
-import type { Location, CurrentWeather, LocationWithWeather } from './types'
+import type { Location, CurrentWeather, LocationWithWeather, RequestStatus } from './types'
 import './App.css'
 
 function App() {
-  type WeatherStatus = 'idle' | 'loading' | 'success' | 'error'
-
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [selected, setSelected] = useState<Location | null>(null)
   const [weather, setWeather] = useState<CurrentWeather | null>(null)
-  const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('idle')
+  const [weatherStatus, setWeatherStatus] = useState<RequestStatus>('idle')
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const [initialQuery, setInitialQuery] = useState('')
   const [sameNameCities, setSameNameCities] = useState<LocationWithWeather[]>([])
@@ -96,12 +95,11 @@ function App() {
       setWeather(data)
       setWeatherStatus('success')
       loadSameNameCities(loc)
-    } catch (err) {
+    } catch {
       setWeatherError('Failed to load weather data.')
       setWeatherStatus('error')
     }
   }, [loadSameNameCities])
-
 
   // Rotate same-name cards in-memory — no API calls
   const handleSameNameSelect = (loc: Location) => {
@@ -130,92 +128,96 @@ function App() {
     setOverlayOpen(false)
   }, [])
 
+  const handleSearchFocus = useCallback((query: string) => {
+    setInitialQuery(query)
+    setOverlayOpen(true)
+  }, [])
+
   return (
-    <div className="app-root">
-      <MapView location={selected} />
+    <ErrorBoundary>
+      <div className="app-root">
+        <MapView location={selected} />
 
-      {weatherStatus === 'loading' && selected && (
-        <Card
-          elevation={4}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            left: 24,
-            zIndex: 1100,
-            minWidth: 220,
-            maxWidth: 300,
-            borderRadius: 2,
-          }}
-        >
-          <CardContent sx={{ pb: '16px !important' }}>
-            <Skeleton variant="text" width={120} />
-            <Skeleton variant="text" width={100} height={48} sx={{ mt: 0.5 }} />
-            <Skeleton variant="text" width={80} />
-            <Skeleton variant="text" width={140} sx={{ mt: 1 }} />
-            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-              <Skeleton variant="text" width={50} />
-              <Skeleton variant="text" width={60} />
-              <Skeleton variant="text" width={55} />
-            </Box>
-          </CardContent>
-        </Card>
-      )}
+        {weatherStatus === 'loading' && selected && (
+          <Card
+            elevation={4}
+            sx={{
+              position: 'fixed',
+              bottom: 24,
+              left: 24,
+              zIndex: 1100,
+              minWidth: 220,
+              maxWidth: 300,
+              borderRadius: 2,
+            }}
+          >
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Skeleton variant="text" width={120} />
+              <Skeleton variant="text" width={100} height={48} sx={{ mt: 0.5 }} />
+              <Skeleton variant="text" width={80} />
+              <Skeleton variant="text" width={140} sx={{ mt: 1 }} />
+              <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                <Skeleton variant="text" width={50} />
+                <Skeleton variant="text" width={60} />
+                <Skeleton variant="text" width={55} />
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
-      {weather && selected && (
-        <WeatherCard
-          location={selected}
-          weather={weather}
-          onClose={handleCloseWeather}
+        {weather && selected && (
+          <WeatherCard
+            location={selected}
+            weather={weather}
+            onClose={handleCloseWeather}
+          />
+        )}
+
+        <SameNameCityCards
+          cities={sameNameCities}
+          loading={sameNameLoading}
+          onSelect={handleSameNameSelect}
         />
-      )}
 
-      <SameNameCityCards
-        cities={sameNameCities}
-        loading={sameNameLoading}
-        onSelect={handleSameNameSelect}
-      />
+        {/* Inline search bar — click to open the overlay search panel */}
+        <SearchInput
+          placeholder="Begin typing to search…"
+          showLabel={false}
+          readOnly
+          onFocus={() => setOverlayOpen(true)}
+          onSearch={handleSearchFocus}
+          style={{
+            position: 'fixed',
+            top: 32,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            margin: 0,
+            maxWidth: 360,
+          }}
+        />
 
-      {/* Inline search bar — click to open the overlay search panel */}
-      <SearchInput
-        placeholder="Begin typing to search…"
-        showLabel={false}
-        readOnly
-        onFocus={() => setOverlayOpen(true)}
-        onSearch={(query) => {
-          setInitialQuery(query)
-          setOverlayOpen(true)
-        }}
-        style={{
-          position: 'fixed',
-          top: 32,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          margin: 0,
-          maxWidth: 360,
-        }}
-      />
+        <Snackbar
+          open={!!weatherError}
+          autoHideDuration={6000}
+          onClose={() => setWeatherError(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert severity="error" variant="filled" onClose={() => setWeatherError(null)}>
+            {weatherError}
+          </Alert>
+        </Snackbar>
 
-      <Snackbar
-        open={!!weatherError}
-        autoHideDuration={6000}
-        onClose={() => setWeatherError(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert severity="error" variant="filled" onClose={() => setWeatherError(null)}>
-          {weatherError}
-        </Alert>
-      </Snackbar>
+        <OverlaySearchBar
+          open={overlayOpen}
+          initialQuery={initialQuery}
+          onClose={handleCloseOverlay}
+          onSelect={handleSelect}
+        />
 
-      <OverlaySearchBar
-        open={overlayOpen}
-        initialQuery={initialQuery}
-        onClose={handleCloseOverlay}
-        onSelect={handleSelect}
-      />
-
-      <ThemeToggle />
-    </div>
+        <ThemeToggle />
+      </div>
+    </ErrorBoundary>
   )
 }
 

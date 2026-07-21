@@ -14,7 +14,7 @@ interface SearchInputProps {
   readOnly?: boolean
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles = {
   wrapper: {
     width: '100%',
     maxWidth: '31.25rem',
@@ -58,7 +58,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     padding: 0,
   },
-}
+} as const satisfies Record<string, React.CSSProperties>
 
 const darkOverrides = {
   input: {

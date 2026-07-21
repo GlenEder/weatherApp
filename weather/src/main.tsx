@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { StrictMode, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider } from '@mui/material/styles'
@@ -10,7 +11,7 @@ import { ColorModeProvider, useColorMode } from './ColorModeContext'
 import App from './App.tsx'
 
 // Fix default marker icon paths broken by bundlers (per .maki/skills/leaflet)
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => void })._getIconUrl
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -29,7 +30,9 @@ function ThemedApp() {
   )
 }
 
-createRoot(document.getElementById('root')!).render(
+const rootEl = document.getElementById('root')
+if (!rootEl) throw new Error('Root element #root not found')
+createRoot(rootEl).render(
   <StrictMode>
     <ColorModeProvider>
       <ThemedApp />

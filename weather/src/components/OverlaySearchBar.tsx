@@ -19,8 +19,7 @@ interface OverlaySearchBarProps {
 }
 
 function buildSecondary(loc: Location): string {
-  const region = [loc.admin1, loc.country].filter(Boolean).join(', ')
-  return region
+  return [loc.admin1, loc.country].filter(Boolean).join(', ')
 }
 
 export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }: OverlaySearchBarProps) {
@@ -50,12 +49,13 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
 
     setStatus('loading')
     try {
-      const results = await searchLocations(trimmed)
+      const results = await searchLocations(trimmed, controller.signal)
       if (!controller.signal.aborted) {
         setMatches(results)
         setStatus(results.length > 0 ? 'success' : 'empty')
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       if (!controller.signal.aborted) {
         setMatches([])
         setStatus('error')
@@ -88,10 +88,9 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
   useEffect(() => {
     if (!open) return
 
-    if (inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
+    const timer = setTimeout(() => inputRef.current?.focus(), 50)
 
+    /* eslint-disable react-hooks/set-state-in-effect -- seeding state from opening props */
     if (initialQuery) {
       setTerm(initialQuery)
       handleSearch(initialQuery)
@@ -101,7 +100,10 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
       setStatus('idle')
       setError(null)
     }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    return () => clearTimeout(timer)
+  }, [open, initialQuery, handleSearch])
 
   // Handle keyboard: Escape to close
   useEffect(() => {
@@ -194,7 +196,7 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
                 {status === 'empty' && (
                   <Box sx={{ p: 2 }}>
                     <Alert severity="info" variant="outlined" sx={{ m: 0 }}>
-                      No matches found for "{term}".
+                      No matches found for &quot;{term}&quot;.
                     </Alert>
                   </Box>
                 )}

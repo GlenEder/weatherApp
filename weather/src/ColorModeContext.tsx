@@ -45,6 +45,7 @@ export function ColorModeProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useColorMode(): ColorModeContextValue {
   const ctx = useContext(ColorModeContext)
   if (!ctx) {

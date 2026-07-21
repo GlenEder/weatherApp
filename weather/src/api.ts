@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { CurrentWeather, Location, LocationWithWeather } from './types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
@@ -15,7 +16,60 @@ export class ApiError extends Error {
   }
 }
 
-export async function searchLocations(term: string): Promise<Location[]> {
+// ── Zod schemas for runtime validation ─────────────────────────────────────
+
+const locationSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  elevation: z.number().optional(),
+  feature_code: z.string().optional(),
+  country_code: z.string().optional(),
+  admin1: z.string().optional(),
+  admin2: z.string().optional(),
+  timezone: z.string().optional(),
+  population: z.number().optional(),
+  country: z.string().optional(),
+}) satisfies z.ZodType<Location>
+
+const unitsSchema = z.object({
+  temperature: z.string(),
+  windSpeed: z.string(),
+  precipitation: z.string(),
+  humidity: z.string(),
+  pressure: z.string(),
+})
+
+const currentWeatherSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number(),
+  timezone: z.string(),
+  elevation: z.number(),
+  observedAt: z.string(),
+  temperature: z.number(),
+  apparentTemperature: z.number(),
+  humidity: z.number(),
+  precipitation: z.number(),
+  weatherCode: z.number(),
+  cloudCover: z.number(),
+  surfacePressure: z.number(),
+  windSpeed: z.number(),
+  windDirection: z.number(),
+  windGusts: z.number(),
+  units: unitsSchema,
+}) satisfies z.ZodType<CurrentWeather>
+
+const locationsResponseSchema = z.object({
+  locations: z.array(locationSchema),
+})
+
+// ── API functions ───────────────────────────────────────────────────────────
+
+export async function searchLocations(
+  term: string,
+  signal?: AbortSignal,
+): Promise<Location[]> {
   const trimmed = term.trim()
   if (!trimmed) return []
 
@@ -23,8 +77,11 @@ export async function searchLocations(term: string): Promise<Location[]> {
 
   let response: Response
   try {
-    response = await fetch(url)
-  } catch {
+    response = await fetch(url, { signal })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw err
+    }
     throw new ApiError('Network error while searching. Check your connection.')
   }
 
@@ -33,21 +90,21 @@ export async function searchLocations(term: string): Promise<Location[]> {
     throw new ApiError(body.error ?? `Search failed (HTTP ${response.status}).`, response.status)
   }
 
-  let data: { locations: Location[] }
-  try {
-    data = (await response.json()) as { locations: Location[] }
-  } catch {
+  const raw = await response.json()
+  const parsed = locationsResponseSchema.safeParse(raw)
+  if (!parsed.success) {
     throw new ApiError('Received an invalid response from the server.')
   }
 
-  return data.locations
+  return parsed.data.locations
 }
 
 export async function fetchSameNameLocations(
   name: string,
   excludeId: number,
+  signal?: AbortSignal,
 ): Promise<Location[]> {
-  const results = await searchLocations(name)
+  const results = await searchLocations(name, signal)
   return results.filter((loc) => loc.id !== excludeId)
 }
 
@@ -96,12 +153,11 @@ export async function fetchWeather(
     throw new ApiError(body.error ?? `Weather fetch failed (HTTP ${response.status}).`, response.status)
   }
 
-  let data: CurrentWeather
-  try {
-    data = (await response.json()) as CurrentWeather
-  } catch {
+  const raw = await response.json()
+  const parsed = currentWeatherSchema.safeParse(raw)
+  if (!parsed.success) {
     throw new ApiError('Received an invalid response from the weather service.')
   }
 
-  return data
+  return parsed.data
 }

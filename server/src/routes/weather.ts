@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { getCurrentWeather } from '../services/forecast'
-import type { UnitsMode, WeatherQuery } from '../types'
+import type { WeatherQuery } from '../types'
 
 const router = Router()
 
@@ -29,7 +29,7 @@ router.get('/', async (req, res, next) => {
     const query: WeatherQuery = {
       lat: parsed.data.lat,
       lon: parsed.data.lon,
-      units: parsed.data.units as UnitsMode,
+      units: parsed.data.units,
     }
     const result = await getCurrentWeather(query)
     res.json(result)

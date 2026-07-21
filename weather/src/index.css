@@ -34,3 +34,30 @@ body.dark {
   --search-hint-hover-bg: rgba(255, 255, 255, 0.12);
   --search-hint-hover-color: rgba(255, 255, 255, 0.65);
 }
+
+/* Dark mode Leaflet overrides */
+body.dark .leaflet-popup-content-wrapper,
+body.dark .leaflet-popup-tip {
+  background: #2b2b2b;
+  color: #e0e0e0;
+}
+
+body.dark .leaflet-bar a {
+  background-color: #2b2b2b;
+  border-bottom-color: #444;
+  color: #e0e0e0;
+}
+
+body.dark .leaflet-bar a:hover {
+  background-color: #3a3a3a;
+}
+
+body.dark .leaflet-control-attribution {
+  background: #2b2b2b;
+  background: rgba(43, 43, 43, 0.85);
+  color: #aaa;
+}
+
+body.dark .leaflet-control-attribution a {
+  color: #8bb8e8;
+}

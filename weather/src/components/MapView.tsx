@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import '../leaflet-setup'
 import L from 'leaflet'
 import { useMap } from '../hooks/useMap'
 import { useColorMode } from '../ColorModeContext'

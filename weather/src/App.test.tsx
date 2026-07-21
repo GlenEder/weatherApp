@@ -51,9 +51,11 @@ describe('App', () => {
     vi.clearAllMocks()
   })
 
-  it('renders the map', () => {
+  it('renders the map', async () => {
     renderWithProviders(<App />)
-    expect(screen.getByTestId('map-view')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByTestId('map-view')).toBeInTheDocument()
+    })
   })
 
   it('opens search overlay when a printable character is pressed', () => {

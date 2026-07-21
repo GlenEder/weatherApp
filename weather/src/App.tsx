@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import Skeleton from '@mui/material/Skeleton'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Box from '@mui/material/Box'
-import { MapView } from './components/MapView'
 import { OverlaySearchBar } from './components/OverlaySearchBar'
 import { SearchInput } from './components/SearchInput'
 import { WeatherCard } from './components/WeatherCard'
@@ -13,8 +12,30 @@ import { SameNameCityCards } from './components/SameNameCityCards'
 import { ThemeToggle } from './components/ThemeToggle'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { fetchWeather, fetchSameNameLocations, fetchBatchWeather } from './api'
+import { useColorMode } from './ColorModeContext'
 import type { Location, CurrentWeather, LocationWithWeather, RequestStatus } from './types'
 import './App.css'
+
+const MapView = lazy(() =>
+  import('./components/MapView').then((m) => ({ default: m.MapView })),
+)
+
+function MapFallback() {
+  const { mode } = useColorMode()
+  const isDark = mode === 'dark'
+  return (
+    <Skeleton
+      variant="rectangular"
+      animation="pulse"
+      sx={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        bgcolor: isDark ? 'grey.900' : 'grey.200',
+      }}
+    />
+  )
+}
 
 function App() {
   const [overlayOpen, setOverlayOpen] = useState(false)
@@ -136,7 +157,9 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="app-root">
-        <MapView location={selected} />
+        <Suspense fallback={<MapFallback />}>
+          <MapView location={selected} />
+        </Suspense>
 
         {weatherStatus === 'loading' && selected && (
           <Card

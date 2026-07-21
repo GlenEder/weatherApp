@@ -1,6 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 
 interface UseMapOptions {
   center: [number, number]

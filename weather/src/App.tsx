@@ -185,7 +185,7 @@ function App() {
           showLabel={false}
           readOnly
           onFocus={() => setOverlayOpen(true)}
-          onSearch={handleSearchFocus}
+          onSubmit={handleSearchFocus}
           style={{
             position: 'fixed',
             top: 32,

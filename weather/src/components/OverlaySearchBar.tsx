@@ -121,6 +121,16 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
     setTerm(value)
   }
 
+  // Immediate search on Enter — clears the debounce to avoid double-fire
+  const handleSubmit = useCallback((value: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+    setTerm(value)
+    handleSearch(value)
+  }, [handleSearch])
+
   const handleSelect = (loc: Location) => {
     onSelect(loc)
     onClose()
@@ -167,7 +177,7 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
           <SearchInput
             value={term}
             onChange={handleInputChange}
-            onSearch={handleSearch}
+            onSubmit={handleSubmit}
             placeholder="Search for a city..."
             inputRef={inputRef}
             showLabel={false}

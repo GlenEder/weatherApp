@@ -107,9 +107,9 @@ export function OverlaySearchBar({ open, initialQuery = '', onClose, onSelect }:
     return () => clearTimeout(timer)
   }, [open, initialQuery, handleSearch])
 
-  // Reset highlight when results change
+  // Highlight first result when results arrive, clear when empty
   useEffect(() => {
-    setHighlightedIndex(-1)
+    setHighlightedIndex(matches.length > 0 ? 0 : -1)
   }, [matches])
 
   // Scroll highlighted item into view

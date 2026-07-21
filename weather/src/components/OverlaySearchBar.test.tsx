@@ -137,7 +137,7 @@ describe('OverlaySearchBar', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('highlights first result on ArrowDown', async () => {
+  it('auto-highlights first result when results appear', async () => {
     mockSearchLocations.mockResolvedValueOnce(mockLocations)
     renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     const input = screen.getByPlaceholderText('Search for a city...')
@@ -145,9 +145,11 @@ describe('OverlaySearchBar', () => {
     await waitFor(() => {
       expect(screen.getByText('London')).toBeInTheDocument()
     })
-    fireEvent.keyDown(input, { key: 'ArrowDown' })
-    // First item should be highlighted
-    expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    // First result is automatically highlighted (effect runs after render)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    })
+    expect(screen.getByRole('button', { name: /Paris/ })).not.toHaveClass('Mui-selected')
   })
 
   it('ArrowDown wraps from last to first', async () => {
@@ -158,13 +160,16 @@ describe('OverlaySearchBar', () => {
     await waitFor(() => {
       expect(screen.getByText('Paris')).toBeInTheDocument()
     })
-    // Arrow to last item (Paris, index 1)
+    // With auto-highlight on index 0, ArrowDown once moves to index 1 (Paris)
     fireEvent.keyDown(input, { key: 'ArrowDown' })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Paris/ })).toHaveClass('Mui-selected')
+    })
+    // ArrowDown again wraps from last (1) back to first (0)
     fireEvent.keyDown(input, { key: 'ArrowDown' })
-    expect(screen.getByRole('button', { name: /Paris/ })).toHaveClass('Mui-selected')
-    // Wrap back to first
-    fireEvent.keyDown(input, { key: 'ArrowDown' })
-    expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    })
   })
 
   it('ArrowUp wraps from first to last', async () => {
@@ -175,9 +180,11 @@ describe('OverlaySearchBar', () => {
     await waitFor(() => {
       expect(screen.getByText('London')).toBeInTheDocument()
     })
-    // ArrowUp from no highlight wraps to last
+    // Auto-highlighted at first, ArrowUp wraps to last
     fireEvent.keyDown(input, { key: 'ArrowUp' })
-    expect(screen.getByRole('button', { name: /Paris/ })).toHaveClass('Mui-selected')
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Paris/ })).toHaveClass('Mui-selected')
+    })
   })
 
   it('Enter selects the highlighted result', async () => {
@@ -190,28 +197,30 @@ describe('OverlaySearchBar', () => {
     await waitFor(() => {
       expect(screen.getByText('London')).toBeInTheDocument()
     })
-    // Highlight first result
-    fireEvent.keyDown(input, { key: 'ArrowDown' })
-    // Press Enter to select
+    // Wait for auto-highlight effect to apply before selecting
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    })
+    // Press Enter to select the auto-highlighted first result
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(onSelect).toHaveBeenCalledWith(mockLocations[0])
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('resets highlight when search results change', async () => {
+  it('auto-highlights first result when new search results arrive', async () => {
     mockSearchLocations.mockResolvedValueOnce(mockLocations)
     renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
     const input = screen.getByPlaceholderText('Search for a city...')
-    // First search
+    // First search — first result should be auto-highlighted
     await userEvent.type(input, 'Lon')
     await waitFor(() => {
       expect(screen.getByText('London')).toBeInTheDocument()
     })
-    // Highlight first
-    fireEvent.keyDown(input, { key: 'ArrowDown' })
-    expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+    })
 
-    // Change search term — results change, highlight should reset
+    // Change search term — new first result should be auto-highlighted
     const newMock: Location[] = [
       { id: 3, name: 'Berlin', latitude: 52.52, longitude: 13.41, country_code: 'DE', country: 'Germany', admin1: 'Berlin' },
     ]
@@ -221,7 +230,8 @@ describe('OverlaySearchBar', () => {
     await waitFor(() => {
       expect(screen.getByText('Berlin')).toBeInTheDocument()
     })
-    // No item should be highlighted after results change
-    expect(screen.getByRole('button', { name: /Berlin/ })).not.toHaveClass('Mui-selected')
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Berlin/ })).toHaveClass('Mui-selected')
+    })
   })
 })

@@ -136,4 +136,92 @@ describe('OverlaySearchBar', () => {
     expect(onSelect).toHaveBeenCalledWith(mockLocations[0])
     expect(onClose).toHaveBeenCalledOnce()
   })
+
+  it('highlights first result on ArrowDown', async () => {
+    mockSearchLocations.mockResolvedValueOnce(mockLocations)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    const input = screen.getByPlaceholderText('Search for a city...')
+    await userEvent.type(input, 'Lon')
+    await waitFor(() => {
+      expect(screen.getByText('London')).toBeInTheDocument()
+    })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    // First item should be highlighted
+    expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+  })
+
+  it('ArrowDown wraps from last to first', async () => {
+    mockSearchLocations.mockResolvedValueOnce(mockLocations)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    const input = screen.getByPlaceholderText('Search for a city...')
+    await userEvent.type(input, 'Lon')
+    await waitFor(() => {
+      expect(screen.getByText('Paris')).toBeInTheDocument()
+    })
+    // Arrow to last item (Paris, index 1)
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(screen.getByRole('button', { name: /Paris/ })).toHaveClass('Mui-selected')
+    // Wrap back to first
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+  })
+
+  it('ArrowUp wraps from first to last', async () => {
+    mockSearchLocations.mockResolvedValueOnce(mockLocations)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    const input = screen.getByPlaceholderText('Search for a city...')
+    await userEvent.type(input, 'Lon')
+    await waitFor(() => {
+      expect(screen.getByText('London')).toBeInTheDocument()
+    })
+    // ArrowUp from no highlight wraps to last
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+    expect(screen.getByRole('button', { name: /Paris/ })).toHaveClass('Mui-selected')
+  })
+
+  it('Enter selects the highlighted result', async () => {
+    mockSearchLocations.mockResolvedValueOnce(mockLocations)
+    const onSelect = vi.fn()
+    const onClose = vi.fn()
+    renderWithProvider(<OverlaySearchBar open={true} onClose={onClose} onSelect={onSelect} />)
+    const input = screen.getByPlaceholderText('Search for a city...')
+    await userEvent.type(input, 'Lon')
+    await waitFor(() => {
+      expect(screen.getByText('London')).toBeInTheDocument()
+    })
+    // Highlight first result
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    // Press Enter to select
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onSelect).toHaveBeenCalledWith(mockLocations[0])
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('resets highlight when search results change', async () => {
+    mockSearchLocations.mockResolvedValueOnce(mockLocations)
+    renderWithProvider(<OverlaySearchBar open={true} onClose={vi.fn()} onSelect={vi.fn()} />)
+    const input = screen.getByPlaceholderText('Search for a city...')
+    // First search
+    await userEvent.type(input, 'Lon')
+    await waitFor(() => {
+      expect(screen.getByText('London')).toBeInTheDocument()
+    })
+    // Highlight first
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(screen.getByRole('button', { name: /London/ })).toHaveClass('Mui-selected')
+
+    // Change search term — results change, highlight should reset
+    const newMock: Location[] = [
+      { id: 3, name: 'Berlin', latitude: 52.52, longitude: 13.41, country_code: 'DE', country: 'Germany', admin1: 'Berlin' },
+    ]
+    mockSearchLocations.mockResolvedValueOnce(newMock)
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Ber')
+    await waitFor(() => {
+      expect(screen.getByText('Berlin')).toBeInTheDocument()
+    })
+    // No item should be highlighted after results change
+    expect(screen.getByRole('button', { name: /Berlin/ })).not.toHaveClass('Mui-selected')
+  })
 })
